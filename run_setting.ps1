@@ -1,6 +1,6 @@
 # =========================================================================
 # 1. ระบบเช็ครหัสผ่านก่อนเข้าใช้งาน (Security Lock)
-# แก้ไขรหัสผ่านในเครื่องหมายอัญประกาศด้านล่างนี้ตามใจชอบครับ
+# สามารถเปลี่ยนรหัสผ่านในเครื่องหมายอัญประกาศด้านล่างนี้ได้ตามต้องการครับ
 $SecretKey = "POTAE-KUY" 
 
 # รหัสสี ANSI เพื่อความสวยงาม
@@ -19,60 +19,49 @@ Write-Host -NoNewline "[>] Enter Key: "
 $inputKey = ""
 while ($true) {
     $char = [System.Console]::ReadKey($true)
-    if ($char.Key -eq [System.ConsoleKey]::Enter) {
-        Write-Host ""
-        break
-    }
+    if ($char.Key -eq [System.ConsoleKey]::Enter) { Write-Host ""; break }
     elseif ($char.Key -eq [System.ConsoleKey]::Backspace) {
         if ($inputKey.Length -gt 0) {
             $inputKey = $inputKey.Substring(0, $inputKey.Length - 1)
             Write-Host -NoNewline "`b `b"
         }
     }
-    else {
-        $inputKey += $char.KeyChar
-        Write-Host -NoNewline "*"
-    }
+    else { $inputKey += $char.KeyChar; Write-Host -NoNewline "*" }
 }
 
-# ตรวจสอบรหัสผ่าน
 if ($inputKey -ne $SecretKey) {
     Write-Host "`n${Red}[-] ACCESS DENIED: Incorrect Access Key!${ResetColor}"
     Write-Host "${Gray}Closing program in 3 seconds...${ResetColor}"
     Start-Sleep -Seconds 3
     exit
 }
-
 Write-Host "`n${Cyan}[+] ACCESS GRANTED: Welcome to Setting Potae!${ResetColor}"
 Start-Sleep -Seconds 1
 # =========================================================================
 
-# 2. ส่วนสร้างไฟล์ชั่วคราวและเก็บข้อมูลโครงสร้างไฟล์ (.reg และ .cmd ตามรูปภาพของคุณ)
+# =========================================================================
+# 2. คลังสร้างไฟล์สคริปต์ปรับแต่งระบบชั่วคราวเบื้องหลัง (สร้างไฟล์อัตโนมัติจากในโค้ด)
 $TempDir = "$env:TEMP\SettingPotae"
 if (-not (Test-Path $TempDir)) { New-Item -ItemType Directory -Path $TempDir -Force | Out-Null }
 
-# ข้อความจำลองโครงสร้างหัวไฟล์ Registry มาตรฐาน
-$RegHeader = "Windows Registry Editor Version 5.00"
-
-# สร้างไฟล์ทั้ง 8 ลงในโฟลเดอร์ชั่วคราวเบื้องหลัง
 @'
 Windows Registry Editor Version 5.00
-; [godreg.reg] บันทึกค่าปรับแต่งความแรงระบบ
+; [godreg.reg] บันทึกค่าปรับแต่งความแรงระบบของคุณ
 '@ | Out-File -FilePath "$TempDir\godreg.reg" -Encoding utf8 -Force
 
 @'
 Windows Registry Editor Version 5.00
-; [Key.reg] ปรับแต่งการตอบสนองคีย์บอร์ด
+; [Key.reg] ปรับแต่งการตอบสนองคีย์บอร์ดของคุณ
 '@ | Out-File -FilePath "$TempDir\Key.reg" -Encoding utf8 -Force
 
 @'
 Windows Registry Editor Version 5.00
-; [Mouse god.reg] ปรับแต่งการตอบสนองเมาส์แบบ God Mode
+; [Mouse god.reg] ปรับแต่งการตอบสนองเมาส์แบบ God Mode ของคุณ
 '@ | Out-File -FilePath "$TempDir\Mouse god.reg" -Encoding utf8 -Force
 
 @'
 Windows Registry Editor Version 5.00
-; [mouse op.reg] ปรับแต่งความเร็วเมาส์ฉบับ Overpowered
+; [mouse op.reg] ปรับแต่งความเร็วเมาส์ฉบับ Overpowered ของคุณ
 '@ | Out-File -FilePath "$TempDir\mouse op.reg" -Encoding utf8 -Force
 
 @'
@@ -91,16 +80,16 @@ echo Done.
 
 @'
 Windows Registry Editor Version 5.00
-; [regeutua.reg] ปรับแต่งค่ารีจิสทรีเสริมความเสถียร
+; [regeutua.reg] ปรับแต่งค่ารีจิสทรีเสริมความเสถียรของคุณ
 '@ | Out-File -FilePath "$TempDir\regeutua.reg" -Encoding utf8 -Force
 
 @'
 Windows Registry Editor Version 5.00
-; [regretuagod.reg] คืนค่ารีจิสทรีเมาส์และระบบกลับเป็นค่าเริ่มต้น
+; [regretuagod.reg] คืนค่ารีจิสทรีเมาส์และระบบกลับเป็นค่าเริ่มต้นของคุณ
 '@ | Out-File -FilePath "$TempDir\regretuagod.reg" -Encoding utf8 -Force
+# =========================================================================
 
-
-# 3. กำหนดตัวแปรตำแหน่งไฟล์สำหรับเรียกใช้งาน
+# 3. กำหนดตัวแปรและฟังก์ชันรันไฟล์เบื้องหลัง
 $RegGodreg      = "$TempDir\godreg.reg"
 $RegKey         = "$TempDir\Key.reg"
 $RegMouseGod    = "$TempDir\Mouse god.reg"
@@ -110,7 +99,6 @@ $CmdNetworkRetua= "$TempDir\Networkretua.cmd"
 $RegRegeutua    = "$TempDir\regeutua.reg"
 $RegRegretuagod = "$TempDir\regretuagod.reg"
 
-# ฟังก์ชันรันไฟล์เบื้องหลังแบบอัตโนมัติ
 function Run-File ($filePath) {
     if (Test-Path $filePath) {
         if ($filePath.EndsWith(".reg")) {
@@ -148,7 +136,7 @@ function Draw-Menu {
     Write-Host "${Gray}Scroll wheel to navigate, Enter to select${ResetColor}"
 }
 
-# 5. ลูปหลักรับการกดปุ่มบนคีย์บอร์ดเพื่อเลื่อนเมนู
+# 5. ลูปคำสั่งรับปุ่มคีย์บอร์ด
 while ($true) {
     Draw-Menu
     $key = [System.Console]::ReadKey($true)
